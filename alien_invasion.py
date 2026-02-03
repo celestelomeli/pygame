@@ -145,8 +145,9 @@ class AlienInvasion:
 
         if collisions:
             for aliens in collisions.values():
-                # Award points for each alien hit
-                self.stats.score += self.settings.alien_points * len(aliens)
+                # Award points based on each alien's individual point value
+                for alien in aliens:
+                    self.stats.score += alien.points
             self.sb.prep_score()
             self.sb.check_high_score()
 
@@ -182,7 +183,17 @@ class AlienInvasion:
 
     def _create_alien(self, alien_number, row_number):
         """Create an alien and place it in the row."""
-        alien = Alien(self)
+        # Assign alien type based on row number
+        # Higher value aliens at top (harder to reach)
+        total_rows = 6  # Approximate number of rows
+        if row_number < total_rows // 3:
+            alien_type = 'red'  # Top rows (hardest to reach, 50 points)
+        elif row_number < 2 * total_rows // 3:
+            alien_type = 'yellow'  # Middle rows (medium, 20 points)
+        else:
+            alien_type = 'green'  # Bottom rows (easiest to hit, 10 points)
+        
+        alien = Alien(self, alien_type)
         alien_width, alien_height = alien.rect.size
 
         # Position alien with spacing
