@@ -14,6 +14,11 @@ class Settings:
         self.bullet_color = (60, 60, 60)
         self.bullets_allowed = 3
 
+        # Alien bullet settings
+        self.alien_bullet_width = 3
+        self.alien_bullet_height = 10
+        self.alien_bullet_color = (255, 0, 0)  # Red bullets
+
         # Ship settings
         self.ship_limit = 3
 
@@ -31,17 +36,25 @@ class Settings:
         self.ship_speed = 1.5
         self.bullet_speed = 3.0
         self.alien_speed = 1.0
+        self.alien_bullet_speed = 1.5
 
         # Fleet direction: 1 = right, -1 = left
         self.fleet_direction = 1
 
         # Scoring
         self.alien_points = 50
+        
+        # Alien firing frequency (starts very low, increases each level)
+        self.alien_fire_frequency = 0.0001
 
     def increase_speed(self):
         """Increase speed settings and alien point values."""
         self.ship_speed *= self.speedup_scale
         self.bullet_speed *= self.speedup_scale
         self.alien_speed *= self.speedup_scale
+        self.alien_bullet_speed *= self.speedup_scale
 
         self.alien_points = int(self.alien_points * self.score_scale)
+        
+        # Increase alien firing frequency each level
+        self.alien_fire_frequency *= 1.1
