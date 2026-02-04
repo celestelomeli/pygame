@@ -1,5 +1,6 @@
 import sys
 from time import sleep
+import random
 
 import pygame
 
@@ -10,6 +11,7 @@ from button import Button
 from ship import Ship
 from bullet import Bullet
 from alien import Alien
+from alien_bullet import AlienBullet
 
 class AlienInvasion:
     """Overall class to manage game assets and behavior."""
@@ -33,11 +35,15 @@ class AlienInvasion:
         self.ship = Ship(self)
         self.bullets = pygame.sprite.Group()
         self.aliens = pygame.sprite.Group()
+        self.alien_bullets = pygame.sprite.Group()
 
         self._create_fleet()
 
         # Make Play button
         self.play_button = Button(self, "Play")
+        
+        # Make Game Over message
+        self.game_over_font = pygame.font.SysFont(None, 100)
 
         # Create pause message
         self.font = pygame.font.SysFont(None, 80)
@@ -50,9 +56,11 @@ class AlienInvasion:
         while True:
             self._check_events()
 
-            if self.stats.game_active and not self.stats.game_paused: # check if not paused
+            if self.stats.game_active and not self.stats.game_paused:
                 self.ship.update()
                 self._update_bullets()
+                self._fire_alien_bullets()
+                self._update_alien_bullets()
                 self._update_aliens()
 
             self._update_screen()
@@ -90,6 +98,7 @@ class AlienInvasion:
             # Clear remaining aliens and bullets
             self.aliens.empty()
             self.bullets.empty()
+            self.alien_bullets.empty()
 
             # Create new fleet and center ship
             self._create_fleet()
@@ -120,6 +129,26 @@ class AlienInvasion:
         if len(self.bullets) < self.settings.bullets_allowed and not self.stats.game_paused:
             new_bullet = Bullet(self)
             self.bullets.add(new_bullet)
+
+    def _fire_alien_bullets(self):
+        """Have random aliens fire bullets."""
+        for alien in self.aliens.sprites():
+            if random.random() < self.settings.alien_fire_frequency:
+                new_bullet = AlienBullet(self, alien)
+                self.alien_bullets.add(new_bullet)
+
+    def _update_alien_bullets(self):
+        """Update alien bullets and check for ship collisions."""
+        self.alien_bullets.update()
+
+        # Remove bullets off screen
+        for bullet in self.alien_bullets.copy():
+            if bullet.rect.top >= self.settings.screen_height:
+                self.alien_bullets.remove(bullet)
+
+        # Check if alien bullet hit ship
+        if pygame.sprite.spritecollideany(self.ship, self.alien_bullets):
+            self._ship_hit()
      
      # Pause game with 'P' key
     def _toggle_pause(self):
@@ -246,6 +275,7 @@ class AlienInvasion:
             # Clear remaining aliens and bullets
             self.aliens.empty()
             self.bullets.empty()
+            self.alien_bullets.empty()
 
             # Create new fleet and center ship
             self._create_fleet()
@@ -269,11 +299,19 @@ class AlienInvasion:
         # Draw aliens
         self.aliens.draw(self.screen)
 
+        # Draw alien bullets (after aliens so they appear on top)
+        for bullet in self.alien_bullets.sprites():
+            bullet.draw_bullet()
+
         # Draw score information
         self.sb.show_score()
 
         # Draw play button if game is inactive
         if not self.stats.game_active:
+            # Show Game Over message if player lost (ships_left = 0)
+            if self.stats.ships_left == 0:
+                self._draw_game_over_message()
+            # Show Play button
             self.play_button.draw_button()
 
         # Draw pause message if game is paused
@@ -289,6 +327,14 @@ class AlienInvasion:
         pause_rect = pause_text.get_rect()                  # Get rect for positioning
         pause_rect.center = self.screen.get_rect().center   # Center on screen
         self.screen.blit(pause_text, pause_rect)
+
+    def _draw_game_over_message(self):
+        """Draw GAME OVER message above Play button."""
+        game_over_text = self.game_over_font.render("GAME OVER", True, (255, 0, 0), self.settings.bg_color)
+        game_over_rect = game_over_text.get_rect()
+        game_over_rect.centerx = self.screen.get_rect().centerx
+        game_over_rect.centery = self.screen.get_rect().centery - 100
+        self.screen.blit(game_over_text, game_over_rect)
 
 
 if __name__ == '__main__':
